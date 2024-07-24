@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<sdf version="1.11">
+    <model name="parking lot">
+        <static>true</static>
+        <link name="base_link">
+            <visual name="parking_lot_visual">
+                <pose relative_to="__model__">-9 8.5 0 0 0 -1.5707</pose>
+                <geometry>
+                    <mesh>
+                      <uri>meshes/temp_export.dae</uri>
+                      <scale>0.3 0.3 0.3</scale>
+                    </mesh>
+                  </geometry>
+            </visual>
+            <collision name="parking_lot_collision">
+                <pose relative_to="__model__">-2 1 0 0 0 0</pose>
+                <geometry>
+                    <plane>
+                        <normal>0 0 1</normal>
+                        <size>15 12</size>
+                    </plane>
+                    <!-- <mesh>
+                        <uri>meshes/temp_export.dae</uri>
+                        <scale>0.3 0.3 0.3</scale>
+                    </mesh> -->
+                </geometry>
+            </collision>
+        </link>
+    </model>
+</sdf>

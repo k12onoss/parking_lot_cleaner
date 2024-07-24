@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<sdf version="1.11">
+    <model name="blue garbage bag">
+        <static>true</static>
+        <link name="base_link">
+            <visual name="blue_garbage_bag_visual">
+                <geometry>
+                    <mesh>
+                      <uri>meshes/scene.gltf</uri>
+                      <scale>0.005 0.005 0.005</scale>
+                    </mesh>
+                  </geometry>
+            </visual>
+            <collision name="blue_garbage_bag_collision">
+                <geometry>
+                    <mesh>
+                        <uri>meshes/scene.gltf</uri>
+                        <scale>0.005 0.005 0.005</scale>
+                    </mesh>
+                </geometry>
+            </collision>
+        </link>
+    </model>
+</sdf>

@@ -1,0 +1,279 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1648,
+      "max": [
+        14.865402221679688,
+        3.6212737560272217,
+        17.650432586669922
+      ],
+      "min": [
+        1.305418848991394,
+        -3.9034461975097656,
+        0.35448357462882996
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 19776,
+      "componentType": 5126,
+      "count": 1648,
+      "max": [
+        0.9999797344207764,
+        0.9991058707237244,
+        0.9802117347717285
+      ],
+      "min": [
+        -0.9984356164932251,
+        -0.9999280571937561,
+        -0.9990399479866028
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1648,
+      "max": [
+        0.8545808792114258,
+        0.9345906376838684
+      ],
+      "min": [
+        0.06055774912238121,
+        0.07583554089069366
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 13184,
+      "componentType": 5126,
+      "count": 1648,
+      "max": [
+        0.8545808792114258,
+        0.9345906376838684
+      ],
+      "min": [
+        0.06055774912238121,
+        0.07583554089069366
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 8004,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "vicente betoret ferrero (https://sketchfab.com/deathcow)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/photogrammetry-blue-garbage-bag-fba21404c4a44db58e905e330586f043",
+      "title": "photogrammetry blue garbage bag"
+    },
+    "generator": "Sketchfab-12.68.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 32016,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 26368,
+      "byteOffset": 32016,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 39552,
+      "byteOffset": 58384,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 97936,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "../materials/textures/defaultMat_baseColor.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "defaultMat",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.6
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Group22623_defaultMat_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2,
+            "TEXCOORD_1": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "4384087b2edb449889e17c90d387915e.fbx"
+    },
+    {
+      "children": [
+        3
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4
+      ],
+      "matrix": [
+        5.2232184410095215,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.30830990668174657,
+        5.214111226656353,
+        0.0,
+        0.0,
+        -5.214111226656353,
+        0.30830990668174657,
+        0.0,
+        -0.7067680358886719,
+        16.506370544433594,
+        0.8463665246963501,
+        1.0
+      ],
+      "name": "Group22623"
+    },
+    {
+      "children": [
+        5
+      ],
+      "matrix": [
+        0.999999999999998,
+        -4.444061303467517e-08,
+        4.370530462835086e-08,
+        0.0,
+        -4.44406073277923e-08,
+        -0.016682598732029742,
+        0.99986083576643,
+        0.0,
+        -4.3705310431246926e-08,
+        -0.99986083576643,
+        -0.016682598732031685,
+        0.0,
+        -7.863997936248779,
+        9.286130905151367,
+        0.1530895233154297,
+        1.0
+      ],
+      "name": "Object_4"
+    },
+    {
+      "mesh": 0,
+      "name": "Group22623_defaultMat_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ]
+}
