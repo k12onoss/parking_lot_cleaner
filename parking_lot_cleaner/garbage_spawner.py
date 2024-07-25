@@ -1,6 +1,6 @@
 import os
 import rclpy
-import random
+import numpy as np
 
 from rclpy.node import Node
 from rclpy.task import Future
@@ -8,33 +8,49 @@ from rclpy.executors import MultiThreadedExecutor
 from ros_gz_interfaces.srv import SpawnEntity
 from ament_index_python.packages import get_package_share_directory
 
-class SpawnModelClient(Node):
+class GarbageSpawner(Node):
     def __init__(self):
-        super().__init__('garbage_spawner_client')
+        super().__init__('garbage_spawner')
         self.cli = self.create_client(SpawnEntity, 'world/default/create')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting again...')
         
         self.count = 0
+        self.mu = 2  # Mean number of garbage items generated
+        self.lambda_interval = 10  # Rate parameter for exponential distribution
 
-        self.timer = self.create_timer(10, self.send_request)
+        # Initial garbage generation event
+        self.timer = None
+        self.schedule_next_generation()
 
-    def send_request(self) -> None:
-        pkg_line_follower = get_package_share_directory('parking_lot_cleaner')
-        model_path = os.path.join(pkg_line_follower, 'models', 'blue_garbage_bag', 'model.sdf')
+    def schedule_next_generation(self):
+        # Cancel the previous timer if it exists
+        if self.timer is not None:
+            self.timer.cancel()
+        
+        interval = np.random.exponential(scale=self.lambda_interval)
+        self.timer = self.create_timer(interval, self.generate_garbage)
+
+    def generate_garbage(self):
+        num_garbage = np.random.poisson(self.mu)
+        for _ in range(num_garbage):
+            self.spawn_garbage()
+
+        # Schedule next garbage generation
+        self.schedule_next_generation()
+
+    def spawn_garbage(self):
+        pkg_share = get_package_share_directory('parking_lot_cleaner')
+        model_path = os.path.join(pkg_share, 'models', 'blue_garbage_bag', 'model.sdf')
 
         if not os.path.isfile(model_path):
             self.get_logger().error(f'Model file not found: {model_path}')
             return
         
-        x = 0
-        while -0.2 < x < 0.2:
-            x = random.random() * 7 - 3.5
-        
-        y = 0
-        while -0.2 < y < 0.2:
-            y = random.random() * 6 - 3
-        
+        x, y = self.random_coordinates()
+
+        self.count += 1
+
         request = SpawnEntity.Request()
         request.entity_factory.sdf_filename = model_path
         request.entity_factory.name = f"bag_{self.count}"
@@ -44,15 +60,16 @@ class SpawnModelClient(Node):
         request.entity_factory.pose.position.y = y
         request.entity_factory.pose.position.z = 0.0
 
-        self.count += 1
+        self.get_logger().info(f"Spawning garbage bag {self.count} at ({x:.2f}, {y:.2f})")
 
-        self.get_logger().info(f"{self.count}")
-
-        future: Future =  self.cli.call_async(request)
-        # self.get_logger().info(f'Sending model spawn request {self.count}...')
-
-        # Use a callback to handle the response asynchronously
+        future: Future = self.cli.call_async(request)
         future.add_done_callback(self.handle_response)
+
+    def random_coordinates(self):
+        width, height = 7.0, 6.0
+        x = np.random.uniform(-width / 2, width / 2)
+        y = np.random.uniform(-height / 2, height / 2)
+        return x, y
 
     def handle_response(self, future):
         try:
@@ -63,9 +80,8 @@ class SpawnModelClient(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SpawnModelClient()
+    node = GarbageSpawner()
 
-    # Use MultiThreadedExecutor to handle both timer callbacks and service responses
     executor = MultiThreadedExecutor()
     executor.add_node(node)
 

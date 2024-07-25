@@ -56,7 +56,7 @@ def generate_launch_description():
     # rviz = Node(
     #     package='rviz2',
     #     executable='rviz2',
-    #     arguments=['-d', os.path.join(pkg_ros_gz_sim_demos, 'rviz', 'joint_states.rviz')],
+    #     arguments=['-d', os.path.join(pkg_parking_lot_cleaner, 'params', 'rviz.rviz')],
     # )
 
     turtlebot_robot_state_publisher_cmd = IncludeLaunchDescription(
@@ -104,7 +104,7 @@ def generate_launch_description():
 
     entity_spawner = Node(
         package='parking_lot_cleaner',
-        executable='spawner.py',
+        executable='garbage_spawner.py',
         name='entity_spawner_node',
     )
 

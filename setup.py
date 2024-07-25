@@ -47,7 +47,7 @@ setup(
     entry_points={
         'console_scripts': [
             'hover_algorithm.py = parking_lot_cleaner.hover_algorithm:main',
-            'spawner.py = parking_lot_cleaner.garbage_spawner:main',
+            'garbage_spawner.py = parking_lot_cleaner.garbage_spawner:main',
             'image_saver.py = parking_lot_cleaner.image_saver:main'
         ],
     },
