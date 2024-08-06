@@ -145,7 +145,7 @@
                 <collision name="collision">
                     <geometry>
                         <box>
-                            <size>0.1 1.6 2.0</size>
+                            <size>0.1 1.6 0.5</size>
                         </box>
                     </geometry>
                 </collision>
@@ -153,6 +153,50 @@
             <static>1</static>
             <allow_auto_disable>1</allow_auto_disable>
             <pose>-3.6 -2.16 0.25 0 0 0</pose>
+        </model>
+
+        <model name="wall_6">
+            <link name="link">
+                <visual name="visual">
+                    <geometry>
+                        <box>
+                            <size>0.1 2.1 0.5</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <geometry>
+                        <box>
+                            <size>0.1 2.1 0.5</size>
+                        </box>
+                    </geometry>
+                </collision>
+            </link>
+            <static>1</static>
+            <allow_auto_disable>1</allow_auto_disable>
+            <pose>-4.71 -1.40 0.25 0 0 1.5707</pose>
+        </model>
+
+        <model name="wall_7">
+            <link name="link">
+                <visual name="visual">
+                    <geometry>
+                        <box>
+                            <size>0.1 0.43 0.5</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <geometry>
+                        <box>
+                            <size>0.1 0.43 0.5</size>
+                        </box>
+                    </geometry>
+                </collision>
+            </link>
+            <static>1</static>
+            <allow_auto_disable>1</allow_auto_disable>
+            <pose>-5.56 1.41 0.25 0 0 1.5707</pose>
         </model>
 
         <include>
