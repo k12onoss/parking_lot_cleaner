@@ -13,7 +13,7 @@ def generate_launch_description():
     y_pose = LaunchConfiguration('y_pose', default='-1.0')
 
     if 'TURTLEBOT3_MODEL' not in os.environ:
-        os.environ['TURTLEBOT3_MODEL'] = 'burger'
+        os.environ['TURTLEBOT3_MODEL'] = 'waffle'
 
     # Package Directories
     pkg_parking_lot_cleaner = get_package_share_directory('parking_lot_cleaner')
