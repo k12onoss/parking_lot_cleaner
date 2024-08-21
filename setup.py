@@ -52,6 +52,7 @@ setup(
             'garbage_deleter.py = parking_lot_cleaner.garbage_deleter:main',
             'image_saver.py = parking_lot_cleaner.image_saver:main',
             'garbage_detector.py = parking_lot_cleaner.garbage_detector:main',
+            'job_allocator.py = parking_lot_cleaner.job_allocator:main',
         ],
     },
 )

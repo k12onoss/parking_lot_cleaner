@@ -129,6 +129,13 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
+    job_allocator = Node(
+        package='parking_lot_cleaner',
+        executable='job_allocator.py',
+        name='job_allocator_node',
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
+
     return LaunchDescription(
         [
             gz_resource_path,
@@ -142,7 +149,8 @@ def generate_launch_description():
             hover_algorithm,
             entity_spawner,
             garbage_deleter,
-            image_saver,
+            # image_saver,
             garbage_detector,
+            job_allocator,
         ]
     )
