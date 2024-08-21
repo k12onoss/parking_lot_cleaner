@@ -52,12 +52,14 @@ def generate_launch_description():
         launch_arguments={'gz_args': '-g '}.items()
     )
 
-    # # RViz
-    # rviz = Node(
-    #     package='rviz2',
-    #     executable='rviz2',
-    #     arguments=['-d', os.path.join(pkg_parking_lot_cleaner, 'params', 'rviz.rviz')],
-    # )
+    # RViz
+    rviz = Node(
+        package='rviz2',
+        executable='rviz2',
+        arguments=['-d', os.path.join(pkg_parking_lot_cleaner, 'params', 'rviz.yaml')],
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
 
     turtlebot_robot_state_publisher_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -82,6 +84,17 @@ def generate_launch_description():
         ),
         launch_arguments={
             'slam_params_file': os.path.join(pkg_parking_lot_cleaner, 'params', 'mapper_params_online_async.yaml'),
+            'use_sim_time': use_sim_time,
+        }.items()
+    )
+
+    nav2 = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('nav2_bringup'), 'launch', 'bringup_launch.py')
+        ),
+        launch_arguments={
+            'map': os.path.join(pkg_parking_lot_cleaner, 'maps', 'parking_lot.yaml'),
+            # 'autostart': 'true',
             'use_sim_time': use_sim_time,
         }.items()
     )
@@ -146,6 +159,20 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
+    initial_pose_publisher = Node(
+        package='parking_lot_cleaner',
+        executable='initial_pose_publisher.py',
+        name='initial_pose_publisher_node',
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
+
+    nav2_goal_sender = Node(
+        package='parking_lot_cleaner',
+        executable='nav2_goal_sender.py',
+        name='nav2_goal_sender_node',
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
+
     return LaunchDescription(
         [
             gz_resource_path,
@@ -154,6 +181,8 @@ def generate_launch_description():
             turtlebot_robot_state_publisher_cmd,
             spawn_turtlebot_cmd,
             slam_toolbox,
+            nav2,
+            rviz,
             gz_ros_bridge,
             image_bridge,
             # robot_state_publisher,
@@ -163,5 +192,7 @@ def generate_launch_description():
             # image_saver,
             garbage_detector,
             job_allocator,
+            initial_pose_publisher,
+            nav2_goal_sender
         ]
     )
