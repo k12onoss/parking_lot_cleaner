@@ -108,6 +108,13 @@ def generate_launch_description():
         name='entity_spawner_node',
     )
 
+    garbage_deleter = Node(
+        package='parking_lot_cleaner',
+        executable='garbage_deleter.py',
+        name='garbage_deleter_node',
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
+
     image_saver = Node(
         package='parking_lot_cleaner',
         executable='image_saver.py',
@@ -126,6 +133,7 @@ def generate_launch_description():
             # robot_state_publisher,
             hover_algorithm,
             entity_spawner,
+            garbage_deleter,
             image_saver,
             # rviz,
         ]

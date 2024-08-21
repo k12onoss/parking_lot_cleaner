@@ -6,6 +6,7 @@ from rclpy.node import Node
 from rclpy.task import Future
 from rclpy.executors import MultiThreadedExecutor
 from ros_gz_interfaces.srv import SpawnEntity
+from std_msgs.msg import String
 from ament_index_python.packages import get_package_share_directory
 
 class GarbageSpawner(Node):
@@ -14,6 +15,8 @@ class GarbageSpawner(Node):
         self.cli = self.create_client(SpawnEntity, 'world/default/create')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting again...')
+
+        self.publisher = self.create_publisher(String, 'garbage_details', 10)
         
         self.count = 0
         self.mu = 2  # Mean number of garbage items generated
@@ -51,9 +54,16 @@ class GarbageSpawner(Node):
 
         self.count += 1
 
+        name = "bag_{}".format(self.count)
+
+        garbage_details = String()
+        garbage_details.data = "{name},{x_pose},{y_pose}".format(name=name,x_pose=x,y_pose=y)
+
+        self.publisher.publish(garbage_details)
+
         request = SpawnEntity.Request()
         request.entity_factory.sdf_filename = model_path
-        request.entity_factory.name = f"bag_{self.count}"
+        request.entity_factory.name = name
         request.entity_factory.allow_renaming = False
         request.entity_factory.relative_to = "default"
         request.entity_factory.pose.position.x = x
