@@ -82,6 +82,7 @@ def generate_launch_description():
         executable='parameter_bridge',
         arguments=[
             '/world/default/create@ros_gz_interfaces/srv/SpawnEntity',
+            '/world/default/remove@ros_gz_interfaces/srv/DeleteEntity',
             '--ros-args',
             '-p',
             f'config_file:={bridge_params}',
@@ -121,6 +122,13 @@ def generate_launch_description():
         name='image_saver_node',
     )
 
+    garbage_detector = Node(
+        package='parking_lot_cleaner',
+        executable='garbage_detector.py',
+        name='garbage_detector_node',
+        parameters=[{'use_sim_time': use_sim_time}]
+    )
+
     return LaunchDescription(
         [
             gz_resource_path,
@@ -135,6 +143,6 @@ def generate_launch_description():
             entity_spawner,
             garbage_deleter,
             image_saver,
-            # rviz,
+            garbage_detector,
         ]
     )

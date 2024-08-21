@@ -29,6 +29,7 @@ data_files = [
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.py'))),
         (os.path.join('share', package_name, 'worlds'), glob(os.path.join('worlds', '*.sdf'))),
         (os.path.join('share', package_name, 'params'), glob(os.path.join('params', '*.yaml'))),
+        (os.path.join('share', package_name, 'trained_model'), glob(os.path.join('trained_model', '*'))),
 ]
 data_files.extend(models)
 
@@ -49,7 +50,8 @@ setup(
             'hover_algorithm.py = parking_lot_cleaner.hover_algorithm:main',
             'garbage_spawner.py = parking_lot_cleaner.garbage_spawner:main',
             'garbage_deleter.py = parking_lot_cleaner.garbage_deleter:main',
-            'image_saver.py = parking_lot_cleaner.image_saver:main'
+            'image_saver.py = parking_lot_cleaner.image_saver:main',
+            'garbage_detector.py = parking_lot_cleaner.garbage_detector:main',
         ],
     },
 )
