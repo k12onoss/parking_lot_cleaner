@@ -10,7 +10,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='True')
     x_pose = LaunchConfiguration('x_pose', default='-5.5')
-    y_pose = LaunchConfiguration('y_pose', default='-1.0')
+    y_pose = LaunchConfiguration('y_pose', default='-0.5')
 
     if 'TURTLEBOT3_MODEL' not in os.environ:
         os.environ['TURTLEBOT3_MODEL'] = 'waffle'
@@ -73,6 +73,16 @@ def generate_launch_description():
         launch_arguments={
             'x_pose': x_pose,
             'y_pose': y_pose
+        }.items()
+    )
+
+    slam_toolbox = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_async_launch.py')
+        ),
+        launch_arguments={
+            'slam_params_file': os.path.join(pkg_parking_lot_cleaner, 'params', 'mapper_params_online_async.yaml'),
+            'use_sim_time': use_sim_time,
         }.items()
     )
 
@@ -143,6 +153,7 @@ def generate_launch_description():
             gzclient,
             turtlebot_robot_state_publisher_cmd,
             spawn_turtlebot_cmd,
+            slam_toolbox,
             gz_ros_bridge,
             image_bridge,
             # robot_state_publisher,

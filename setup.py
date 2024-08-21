@@ -29,6 +29,7 @@ data_files = [
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.py'))),
         (os.path.join('share', package_name, 'worlds'), glob(os.path.join('worlds', '*.sdf'))),
         (os.path.join('share', package_name, 'params'), glob(os.path.join('params', '*.yaml'))),
+        (os.path.join('share', package_name, 'maps'), glob(os.path.join('maps', '*'))),
         (os.path.join('share', package_name, 'trained_model'), glob(os.path.join('trained_model', '*'))),
 ]
 data_files.extend(models)

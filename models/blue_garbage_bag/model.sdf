@@ -7,18 +7,18 @@
                 <geometry>
                     <mesh>
                       <uri>meshes/scene.gltf</uri>
-                      <scale>0.005 0.005 0.005</scale>
+                      <scale>0.0025 0.0025 0.0025</scale>
                     </mesh>
                   </geometry>
             </visual>
-            <collision name="blue_garbage_bag_collision">
+            <!-- <collision name="blue_garbage_bag_collision">
                 <geometry>
                     <mesh>
                         <uri>meshes/scene.gltf</uri>
                         <scale>0.005 0.005 0.005</scale>
                     </mesh>
                 </geometry>
-            </collision>
+            </collision> -->
         </link>
     </model>
 </sdf>
