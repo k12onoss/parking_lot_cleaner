@@ -1,6 +1,7 @@
 import rclpy
 
 from rclpy.node import Node
+from rclpy.task import Future
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from ros_gz_interfaces.srv import DeleteEntity
@@ -30,11 +31,9 @@ class GarbageDeleter(Node):
         x_pose = pose.pose.position.x
         y_pose = pose.pose.position.y
 
-        self.get_logger().info(f'Deleting garbage: {pose}')
-
         temp: list = []
         for coord, name in self.garbage_details.items():
-            if abs(x_pose - coord[0]) < 0.5 and abs(y_pose - coord[1]) < 0.5:
+            if abs(x_pose - coord[0]) < 0.25 and abs(y_pose - coord[1]) < 0.25:
                 self.get_logger().info('Name of the Garbage to be deleted: {}'.format(name))
 
                 request = DeleteEntity.Request()
@@ -48,9 +47,9 @@ class GarbageDeleter(Node):
         for coord in temp:
             self.garbage_details.pop(coord)
 
-    def response_callback(self, future):
+    def response_callback(self, future: Future):
         try:
-            response = future.result()
+            response: DeleteEntity.Response = future.result()
             if response.success:
                 self.get_logger().info(f'Successfully deleted entity')
             else:

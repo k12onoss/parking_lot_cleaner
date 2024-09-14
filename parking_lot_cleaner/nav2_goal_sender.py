@@ -1,88 +1,117 @@
 import rclpy
+import json
 
 from rclpy.node import Node
 from rclpy.task import Future
-from geometry_msgs.msg import PoseStamped, PoseArray
+from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import NavigateThroughPoses
 from rclpy.action import ActionClient
+from rclpy.action.client import ClientGoalHandle
+
+
+class RobotStatus:
+    def __init__(self) -> None:
+        self.goals: list[PoseStamped] = list()
+        self.poses_remaining: int = -1
+        self.is_idle = True
+    
+    def __str__(self) -> str:
+        return f"Robot Status(is_idle: {self.is_idle}, poses_remaining: {self.poses_remaining}, goals: {self.goals})"
+    
+    def __repr__(self) -> str:
+        return f"Robot Status(is_idle: {self.is_idle}, poses_remaining: {self.poses_remaining}, goals: {self.goals})"
 
 
 class Nav2GoalSender(Node):
     def __init__(self):
         super().__init__('nav2_goal_sender')
         
-        self.garbage_queue: list[PoseStamped] = []
-        self.current_goals: list[PoseStamped] = []
-        self.previous_poses_remaining = -1
-        self.is_idle = True
+        self.garbage_dict: dict[int, list[PoseStamped]] = {}
+        self.robot_status_dict: dict[int, RobotStatus] = {}
+        self.action_clients: dict[int, ActionClient] = {}
 
-        self.create_subscription(PoseArray, 'garbage_locations', self.save_locations, 10)
-
-        self.action_client = ActionClient(self, NavigateThroughPoses, 'navigate_through_poses')
-        self.goal_pose = PoseStamped()
+        self.create_subscription(String, 'job_sequence', self.save_sequence, 10)
 
         self.delete_garbage_publisher = self.create_publisher(PoseStamped, 'delete_garbage', 10)
-    
-    def save_locations(self, locations: PoseArray):
-        for location in locations.poses:
-            pose = PoseStamped()
-            pose.header = locations.header
-            pose.pose = location
-            self.garbage_queue.append(pose)
-        
-        if self.is_idle:
-            self.send_goal()
 
-    def send_goal(self):
-        if len(self.garbage_queue) == 0:
-            self.is_idle = True
-            self.get_logger().info("Goal queue is Empty.")
+    def save_sequence(self, job_sequence: String):
+        sequence: list[tuple[int, list[tuple[float, float]]]] = json.loads(job_sequence.data)
+
+        for robot_id, seq in sequence:
+            poses: list[PoseStamped] = self.garbage_dict.setdefault(robot_id, [])
+
+            for x, y in seq:
+                pose = PoseStamped()
+
+                pose.header.stamp = self.get_clock().now().to_msg()
+                pose.header.frame_id = 'map'
+
+                pose.pose.position.x = x
+                pose.pose.position.y = y
+                pose.pose.position.z = 0.0
+
+                poses.append(pose)
+
+            robot_status = self.robot_status_dict.setdefault(robot_id, RobotStatus())
+            if robot_status.is_idle:
+                self.send_goal(robot_id)
+
+    def send_goal(self, robot_id: int):
+        poses = self.garbage_dict.get(robot_id)
+        
+        if len(poses) == 0:
             return
         
-        self.is_idle = False
+        robot_status = self.robot_status_dict.get(robot_id)
+
+        robot_status.is_idle = False
+
+        action_client = self.action_clients.setdefault(robot_id, self.create_action_client(robot_id))
+
+        if not action_client.wait_for_server(timeout_sec=5.0):
+            self.get_logger().error(f'Action server for robot{robot_id} not available')
+            robot_status.is_idle = True
+            return
+
+        robot_status.goals.extend(poses)
+        poses.clear()
         
-        self.get_logger().info('Waiting for action server...')
-        self.action_client.wait_for_server()
+        goal_msg = NavigateThroughPoses.Goal()
+        goal_msg.poses = robot_status.goals
+        
+        future: Future = action_client.send_goal_async(goal_msg, self.feedback_callback)
+        future.add_done_callback(lambda response: self.goal_response_callback(response, robot_id))
 
-        self.current_goals.extend(self.garbage_queue)
-        self.garbage_queue.clear()
-
-        message = NavigateThroughPoses.Goal()
-        message.poses = self.current_goals
-
-        self.get_logger().info('Sending goal pose...')
-        send_goal_future = self.action_client.send_goal_async(message, feedback_callback=self.feedback_callback)
-        send_goal_future.add_done_callback(self.goal_response_callback)
-
-    def goal_response_callback(self, future: Future):
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.is_idle = True
-            self.get_logger().info('Goal rejected')
-            self.garbage_queue.extend(self.current_goals)
+    def goal_response_callback(self, future: Future, robot_id: int):
+        goal_handle: ClientGoalHandle = future.result()
+        if goal_handle.accepted:
+            self.get_logger().info(f'Goal accepted by robot{robot_id}')
+            get_result_future: Future = goal_handle.get_result_async()
+            get_result_future.add_done_callback(lambda result: self.get_result_callback(result, robot_id))
         else:
-            self.get_logger().info('Goal accepted')
-            get_result_future = goal_handle.get_result_async()
-            get_result_future.add_done_callback(self.get_result_callback)
+            robot_status = self.robot_status_dict.get(robot_id)
+            robot_status.is_idle = True
+            self.get_logger().info(f'Goal rejected by robot{robot_id}')
+            self.garbage_dict.get(robot_id).extend(robot_status.goals)
+            robot_status.goals.clear()
 
-    def get_result_callback(self, future: Future):
-        result: NavigateThroughPoses.Result = future.result().result
-        self.get_logger().info(f'Goal result: {result}')
-        if result.error_code == 0:
-            self.is_idle = True
-            # self.delete_garbage_publisher.publish(self.current_goals)
+    def get_result_callback(self, future: Future, robot_id: int):
+        result: NavigateThroughPoses.Result = future.result()
         
-        self.send_goal()
-
+        robot_status = self.robot_status_dict.get(robot_id)
+        robot_status.is_idle = True
+        robot_status.goals.clear()
+        
+        self.send_goal(robot_id)
+    
     def feedback_callback(self, feedback_msg):
         feedback: NavigateThroughPoses.Feedback = feedback_msg.feedback
-        # self.get_logger().info(f'Received feedback: {feedback}')
-        if self.previous_poses_remaining != -1 and feedback.number_of_poses_remaining < self.previous_poses_remaining:
-            garbage_to_delete = self.current_goals[len(self.current_goals) - feedback.number_of_poses_remaining - 1]
-            self.get_logger().info(f"Garbage to be deleted: {garbage_to_delete}")
-            self.delete_garbage_publisher.publish(garbage_to_delete)
-        
-        self.previous_poses_remaining = feedback.number_of_poses_remaining
+        self.delete_garbage_publisher.publish(feedback.current_pose)
+    
+    def create_action_client(self, robot_id: int) -> ActionClient:
+        action: str = 'robot{}/navigate_through_poses'.format(robot_id)
+        return ActionClient(self, NavigateThroughPoses, action)
 
 
 def main(args=None):

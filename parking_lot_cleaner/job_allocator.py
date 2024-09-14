@@ -3,10 +3,12 @@ import math
 import numpy as np
 import time
 import heapq
+import itertools
 import rclpy
+import json
 
 from rclpy.node import Node
-from geometry_msgs.msg import Pose, PoseArray
+from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
@@ -72,9 +74,6 @@ class Point:
         
         return distance
     
-    def to_tuple(self) -> tuple[float]:
-        return (float(self.x),float(self.y))
-
     def __repr__(self):
         return f"({self.x}, {self.y})"
 
@@ -107,7 +106,7 @@ class Robot:
 
 
 class SACostOptimization:
-    def __init__(self, rooms_to_be_allocated, centroid, robots, distance_matrix, precedence_matrix, littering, t, T0=100, r=0.9, Ts=1, Lk=10, maxIterate=1000):
+    def __init__(self, rooms_to_be_allocated, centroid, robots, distance_matrix, precedence_matrix, littering, t, permutations,num_robots, T0=100, r=0.9, Ts=1, Lk=10, maxIterate=1000):
         self.rooms_to_be_allocated = rooms_to_be_allocated
         self.centroid = centroid
         self.robots = robots
@@ -122,15 +121,15 @@ class SACostOptimization:
         self.maxIterate = maxIterate  # Maximum number of iterations
         self.alpha = 5
         self.beta = 5
+        self.permutations = permutations
+        self.num_robots = num_robots
 
     def initial_job_allocation(self):
-        # print(self.rooms_to_be_allocated)
         for room in self.rooms_to_be_allocated:
             task_loc = Point(*self.centroid[room])
             task_litter = self.littering[room]
             min_time = float('inf')
             nearest_robo = None
-            # print(task_loc)
             for robot in self.robots:
                 task_time = robot.last_time
                 if task_time < min_time:
@@ -139,17 +138,74 @@ class SACostOptimization:
 
             if nearest_robo:
                 nearest_robo.assign_task(task_loc, task_litter, current_time=nearest_robo.last_time)
-                # print(f"Assigned task {task_loc} to robot {nearest_robo.robo_id}")
-            # else:
-            #     print(f"No robot could take task {task_loc} due to constraints")
         return [(robot.robo_id, robot.tasks) for robot in self.robots]
+    
+    def best_task_order_permutation(self, task_order):
+        num_robots = len(self.robots)
+        best_solution = None
+        best_cost = float('inf')
+
+        # To keep track of unique combinations of permutations and task splits
+        unique_combinations = set()
+
+        # Generate all possible ways to assign tasks to the robots
+        # Generate all possible splits of this permutation among the robots
+        for task_split in itertools.product(range(num_robots), repeat=len(task_order)):
+            
+            # Create a unique identifier for this combination of perm and task_split
+            combination_key = (task_split)
+            
+        # Check if this combination has already been processed
+            if combination_key in unique_combinations:
+                continue
+            
+            # Add the combination to the set to mark it as processed
+            unique_combinations.add(combination_key)
+            # Reset robot tasks
+            for robot in self.robots:
+                robot.tasks = []
+                robot.current_dump = 0
+                robot.last_loc = Point(0, 0)
+                robot.time_remaining = self.T0
+                robot.last_time = 0
+            
+            # Assign tasks to robots based on the current split
+            for task_idx, robot_idx in enumerate(task_split):
+                task_loc = task_order[task_idx]
+                task_litter = self.littering[self.rooms_to_be_allocated[task_idx]]
+                task_loc = Point(*self.centroid[self.rooms_to_be_allocated[task_idx]])
+                self.robots[robot_idx].assign_task(task_loc, task_litter, self.robots[robot_idx].last_time)
+
+            # Calculate the cost for this permutation
+            cost = self.calculate_cost()
+
+            # Update best solution if the current cost is lower
+            if cost < best_cost:
+                best_cost = cost
+                best_solution = [(self.robots[i].robo_id, self.robots[i].tasks) for i in range(num_robots)]
+        return best_solution, best_cost  
 
     def create_neighbor(self, task_order):
         new_order = list(task_order)
         i, j = random.sample(range(len(task_order)), 2)
         new_order[i], new_order[j] = new_order[j], new_order[i]
         return new_order
-
+    
+    def gen_neighbor(self, task_order):
+        new_order = self.create_neighbor(task_order)
+        self.rooms_to_be_allocated = [self.rooms_to_be_allocated[i] for i in new_order]
+        num = random.randint(0, len(new_order)-1)
+        order = self.permutations[num]
+        for task_idx, robot_idx in enumerate(order):
+            task_litter = self.littering[self.rooms_to_be_allocated[task_idx]]
+            task_loc = Point(*self.centroid[self.rooms_to_be_allocated[task_idx]])
+            self.robots[robot_idx].assign_task(task_loc, task_litter, self.robots[robot_idx].last_time)
+            
+        cost = self.calculate_cost()
+        best_solution = [(self.robots[i].robo_id, self.robots[i].tasks) for i in range(self.num_robots)]
+        
+        return best_solution, cost, new_order
+    
     def calculate_cost(self):
         total_cost = 0
         for robot in self.robots:
@@ -175,20 +231,16 @@ class SACostOptimization:
         return total_cost
     
     def main_run(self):
+        start_time = time.time()
         initial_order = list(range(len(self.rooms_to_be_allocated)))
-        current_solution = self.initial_job_allocation()
-        current_cost = self.calculate_cost()
+        current_solution, current_cost, initial_order = self.gen_neighbor(initial_order)
         T = self.T0
 
         best_cost = current_cost
         best_solution = current_solution
 
-        start_time = time.time()
-
         while T > self.Ts:
             for _ in range(self.Lk):
-                new_order = self.create_neighbor(initial_order)  # Create a new neighbor order
-                self.rooms_to_be_allocated = [self.rooms_to_be_allocated[i] for i in new_order]
                 # Reset the tasks of each robot to empty
                 for robot in self.robots:
                     robot.tasks = []
@@ -198,14 +250,10 @@ class SACostOptimization:
                     robot.last_time = 0
                 
                 # Allocate tasks based on the new order
-                current_solution = self.initial_job_allocation()
-                new_cost = self.calculate_cost()
-
+                current_solution, new_cost, initial_order = self.gen_neighbor(initial_order)
                 delta = new_cost - current_cost
                 if delta < 0 or random.random() < math.exp(-delta / T):
-                    # current_solution = self.job_allocation(new_order)
                     current_cost = new_cost
-                    initial_order = new_order  # Update initial_order to new_order
 
                 if current_cost < best_cost:
                     best_cost = current_cost
@@ -227,12 +275,12 @@ class JobAllocator(Node):
         self.Dumping_area = Point(0, 0)
         self.Charging_Point = Point(0, 10)
         self.speed = 10
-        self.num_robots = 1
+        self.num_robots = 2
         self.T0 = 1500
         self.dump_capacity = 10000
         self.t = 1 # Time required to clean a single litter
 
-        self.publisher = self.create_publisher(PoseArray, 'garbage_locations', 10)
+        self.publisher = self.create_publisher(String, 'job_sequence', 10)
     
     def map_cb(self, img_msg):
         data = self.bridge.imgmsg_to_cv2(img_msg)
@@ -240,10 +288,9 @@ class JobAllocator(Node):
             self.allocate_job(data)
     
     def allocate_job(self, data):
-        np.save('envmap.npy', data)
-        self.get_logger().info('Env Map received: {}'.format(data.shape))
+        self.get_logger().debug('Env Map received.')
         self.is_idle = False
-
+        
         rooms_to_be_allocated, centroid, littering = self.find_rooms_with_ones(data, 8)
         jobs_to_be_allocated = [Point(*centroid[room]) for room in rooms_to_be_allocated]
         jobs_to_be_allocated.insert(0, self.Dumping_area)  # Adding the starting point as the 0th job
@@ -255,22 +302,12 @@ class JobAllocator(Node):
         P = np.zeros((self.num_robots, len(jobs_to_be_allocated), len(jobs_to_be_allocated)))
 
         robots = [Robot(i, self.speed, self.dump_capacity, self.T0, self.t, data) for i in range(self.num_robots)]
+        permutations = self.generate_permutations(len(rooms_to_be_allocated), self.num_robots)
 
-        sa_optimizer = SACostOptimization(rooms_to_be_allocated, centroid, robots, distance_matrix, P, littering, self.t)
+        sa_optimizer = SACostOptimization(rooms_to_be_allocated, centroid, robots, distance_matrix, P, littering, self.t, permutations, self.num_robots)
         minSolution, minCost, elapsed_time = sa_optimizer.main_run()
 
-        locations = []
-        for point in minSolution[0][1]:
-            locations.append(point.to_tuple())
-
-        self.get_logger().info(f'{locations}')
-
-        # for i in range(0, len(locations), 8):
-        self.publish_locations(locations)
-
-        print("Minimum Solution:", minSolution)
-        print("Minimum Cost:", minCost)
-        print("Elapsed Time:", elapsed_time)
+        self.publish_locations(minSolution)
     
     def find_rooms_with_ones(self, matrix, n):
         M, N = matrix.shape
@@ -303,28 +340,41 @@ class JobAllocator(Node):
                     distance_matrix[(p1.x, p1.y)][(p2.x, p2.y)] = AStar().a_star(data, (p1.x, p1.y), (p2.x, p2.y))
         return distance_matrix
     
-    def publish_locations(self, locations: list[tuple]):
-        poses = []
-        for location in locations:
-            x, y = location
+    def publish_locations(self, sequence: list[tuple[int, list[Point]]]):
+        job_sequence: list[tuple[int, list[tuple[float, float]]]] = []
 
-            pose = Pose()
-            pose.position.x = (120 - x) * 8.66 / 240
-            pose.position.y = (160 - y) * 11.55 / 320
-            pose.position.z = 0.0
+        for robot, points in sequence:
+            poses: list[tuple[float, float]] = []
 
-            poses.append(pose)
+            for point in points:
+                x = (120 - point.x) * 8.66 / 240
+                y = (160 - point.y) * 11.55 / 320
 
-        message = PoseArray()
-        message.header.frame_id = 'map'
-        message.header.stamp = self.get_clock().now().to_msg()
-        message.poses = poses
-
+                poses.append((x, y))
+            
+            job_sequence.append((robot, poses))
+        
+        message: String = String()
+        message.data = json.dumps(job_sequence)
+        
         self.publisher.publish(message)
 
         self.is_idle = True
-
-        self.get_logger().info('locations published: {}'.format(message))
+        
+    def generate_permutations(self, m, n):
+        result = []
+        current_permutation = [0] * m
+        self.generate_permutations_helper(current_permutation, m, n, 0, result)
+        return result
+    
+    def generate_permutations_helper(self, current_permutation, m, n, index, result):
+        if index == m:
+            result.append(current_permutation.copy())
+            return
+        
+        for i in range(n):
+            current_permutation[index] = i
+            self.generate_permutations_helper(current_permutation, m, n, index + 1, result)
 
 
 def main(args=None):

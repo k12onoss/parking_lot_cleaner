@@ -1,4 +1,4 @@
-image: parking_lot_save.pgm
+image: parking_lot.pgm
 mode: trinary
 resolution: 0.05
 origin: [-5.4, -3.05, 0]
